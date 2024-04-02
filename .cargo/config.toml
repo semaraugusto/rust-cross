@@ -1,0 +1,20 @@
+[build]
+target = "riscv32im-succinct-zkvm-elf"
+
+[target.riscv32im-succinct-zkvm-elf]
+rustflags = [
+	# "-C",
+	# "link-arg=-Tmemory.x",
+	# "-C",
+	# "link-arg=-Tlink.x",
+	"-C",
+	"target-feature=+crt-static",
+	"-C",
+	"target-feature=+m",
+	"-C",
+	"link-arg=-s",
+]
+# runner = "/usr/sysroot/lib/ld-linux-riscv32-lp32.so.1 --library-path /usr/sysroot/lib/"
+linker = "riscv32-unknown-elf-gcc"
+[unstable]
+build-std = ["panic_abort", "std"]
