@@ -1,4 +1,5 @@
-#![feature(restricted_std)]
+// #![feature(restricted_std)]
+
 fn float_math(x: f64, y: f64) -> f64 {
     x + y * y * 2.0
 }
