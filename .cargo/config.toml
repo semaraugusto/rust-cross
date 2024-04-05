@@ -1,5 +1,6 @@
 [build]
 target = "riscv64gc-unknown-linux-gnu"
+# rustflags = ["-C", "embed-bitcode=yes"]
 
 [target.riscv64gc-unknown-linux-gnu]
 rustflags = [
@@ -28,32 +29,57 @@ rustflags = [
 	"-L",
 	"link-search=/usr/sysroot/lib",
 ]
-runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
+# runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 linker = "riscv64-unknown-linux-gnu-ld"
 
 [target.riscv64gc-unknown-linux-musl]
-# runner = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib/ld-musl-riscv64.so.1 --library-path /home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib"
-# linker = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/bin/riscv64-linux-musl-gcc"
-linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-ld"
 # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-ld"
 rustflags = [
-	"-C",
-	"target-feature=+crt-static",
+	"-L",
+	"/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+
+	"-L",
+	"/home/semar/Work/rust-cross/buildroot/output/host/riscv64-buildroot-linux-musl/sysroot/lib",
+
 	"-C",
 	"link-arg=-s",
+
+	# "-L",
+	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
 	# "-C",
-	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output/target/lib/",
-	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output/host/riscv64-buildroot-linux-musl/sysroot",
-	"-L",
-	"link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
-	"-L",
-	"link-search=/home/semar/Work/rust-cross/buildroot/output/host/riscv64-buildroot-linux-musl/sysroot",
-	# "link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
+	# "link-arg=-Tmemory.x",
 	# "-C",
-	# "link-self-contained=yes",
+	# "link-arg=-Tlink.x",
+	"-C",
+	"target-feature=-crt-static",
+	"-C",
+	"target-feature=+m",
+	# "-C",
+	# "target-feature=+softfloat",
 ]
+# runner = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib/ld-musl-riscv64.so.1 --library-path /home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib"
+# linker = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/bin/riscv64-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output_riscv/host/bin/riscv64-buildroot-linux-musl-ld"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-gcc"
+# rustflags = [
+# 	# "-C",
+# 	# "target-feature=+crt-static",
+# 	"-C",
+# 	"link-arg=-s",
+# 	# # "-C",
+# 	# "-L",
+# 	# "/home/semar/Work/rust-cross/buildroot/output/target/lib/",
+# 	"-L",
+# 	"/home/semar/Work/rust-cross/buildroot/output_riscv/staging",
+# 	# "-L",
+# 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
+# 	# "-L",
+# 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/riscv64-buildroot-linux-musl/sysroot",
+# 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
+# 	# "-C",
+# 	# "link-self-contained=yes",
+# ]
 
 [target.riscv32im-succinct-zkvm-elf]
 rustflags = [
@@ -74,51 +100,88 @@ linker = "riscv32-unknown-elf-gcc"
 
 [target.mips-unknown-linux-gnu]
 # runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
-# linker = "mips-linux-gnu-ld"
-linker = "mips-linux-gnu-gcc"
-rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]
-
-[target.mips-unknown-linux-musl]
-# ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
-# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
-linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
-# cc = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
-# musl-root = "./buildroot/output/host/riscv64-buildroot-linux-musl/sysroot"
+linker = "mips-linux-gnu-ld"
+# linker = "mips-linux-gnu-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot_mips/output/host/bin/mips-linux-ld"
+# rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]
 rustflags = [
 	"-C",
 	"target-feature=+crt-static",
 	"-C",
 	"link-arg=-s",
-	# "-C",
+	"-C",
+	# "target-feature=+soft-float",
+	"target-feature=-soft-float",
+	# "-L",
+	# "/home/semar/Work/rust-cross/buildroot/output_mips/host",
+	# "-L",
+	# "/home/semar/Work/rust-cross/buildroot/output_mips/staging",
+]
+
+[target.mips-unknown-linux-musl]
+# ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
+# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
+linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+rustflags = [
 	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output_mips/target/lib/",
+	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
+	"-C",
+	"target-feature=+crt-static",
+	"-C",
+	"link-arg=-s",
+	"-C",
+	"target-feature=-soft-float",
+	"-C",
+	"link-arg=-static-libgcc",
+	"-C",
+	"embed-bitcode=yes",
 	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output_mips/host/mips-buildroot-linux-musl/sysroot",
-	"-L",
-	"link-search=/home/semar/Work/rust-cross/buildroot/output_mips/target/lib/",
-	"-L",
-	"link-search=/home/semar/Work/rust-cross/buildroot/output_mips/host/mips-buildroot-linux-musl/sysroot",
+	"link-arg=-static-libgcc",
+	# "target-feature=+soft-float",
 	# "-C",
 	# "link-self-contained=yes",
+	# "-C",
+	# "static",
 ]
-# [target.riscv64gc-unknown-linux-musl]
-# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-ld"
-# # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
-# rustflags = [
-# 	"-C",
-# 	"target-feature=+crt-static",
 # 	"-C",
 # 	"link-arg=-s",
 # 	# "-C",
-# 	"-L",
-# 	"/home/semar/Work/rust-cross/buildroot/output/target/lib/",
-# 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
 # 	# "-C",
 # 	# "link-self-contained=yes",
 # ]
-# rustc-flags = "-L /home/semar/Work/rust-cross/buildroot/output/target/lib/"
-[target.mips-unknown-linux-musl.build-std]
 
-# [target.mips-unknown-linux-musl.build-std]
-# [unstable]
-# build-std = ["panic_abort", "std"]
+[target.mips-musl]
+# ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
+# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
+linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+rustflags = [
+	"-L",
+	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
+	"-C",
+	"target-feature=+crt-static",
+	"-C",
+	"link-arg=-s",
+	"-C",
+	"target-feature=-soft-float",
+	"-C",
+	"link-arg=-static-libgcc",
+	"-C",
+	"embed-bitcode=yes",
+	"-L",
+	"link-arg=-static-libgcc",
+	# "target-feature=+soft-float",
+	# "-C",
+	# "link-self-contained=yes",
+	# "-C",
+	# "static",
+]
+# 	"-C",
+# 	"link-arg=-s",
+# 	# "-C",
+# 	# "-C",
+# 	# "link-self-contained=yes",
+# ]
