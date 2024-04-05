@@ -1,6 +1,6 @@
 [build]
 target = "riscv64gc-unknown-linux-gnu"
-# rustflags = ["-C", "embed-bitcode=yes"]
+rustflags = ["-C", "embed-bitcode=yes"]
 
 [target.riscv64gc-unknown-linux-gnu]
 rustflags = [
@@ -33,17 +33,20 @@ rustflags = [
 linker = "riscv64-unknown-linux-gnu-ld"
 
 [target.riscv64gc-unknown-linux-musl]
-# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-gcc"
+linker = "/home/semar/Work/rust-cross/buildroot/output_riscv/host/bin/riscv64-buildroot-linux-musl-gcc"
 # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-ld"
 rustflags = [
 	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
 
 	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output/host/riscv64-buildroot-linux-musl/sysroot/lib",
+	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/riscv64-buildroot-linux-musl/sysroot/lib",
 
 	"-C",
 	"link-arg=-s",
+
+	"-C",
+	"link-arg=-e_start",
 
 	# "-L",
 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
@@ -52,9 +55,13 @@ rustflags = [
 	# "-C",
 	# "link-arg=-Tlink.x",
 	"-C",
-	"target-feature=-crt-static",
+	"target-feature=+crt-static",
 	"-C",
-	"target-feature=+m",
+	"link-arg=-lgcc",
+	"-Ctarget-feature=-c",
+	"-Clink-arg=-Ttext=0x00200800",
+	# "-C",
+	# "target-feature=+m",
 	# "-C",
 	# "target-feature=+softfloat",
 ]
@@ -62,6 +69,29 @@ rustflags = [
 # linker = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/bin/riscv64-linux-musl-gcc"
 # linker = "/home/semar/Work/rust-cross/buildroot/output_riscv/host/bin/riscv64-buildroot-linux-musl-ld"
 # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-gcc"
+# [target.riscv32im-unknown-none-elf]
+[target.riscv64gc-unknown-none-elf]
+# linker = "riscv64-unknown-elf-gcc"
+# rustflags = [
+# 	"-C",
+# 	"passes=loweratomic",
+# 	"-Clink-arg=-e_start",
+# 	"-Ctarget-feature=-c",
+# 	"-Clink-arg=-Ttext=0x00200800",
+# 	# "-C",
+# 	# "link-arg=--fatal-warnings",
+# 	"-C",
+# 	"panic=abort",
+# 	"-L",
+# 	"/usr/sysroot/lib/",
+# 	"-C",
+# 	"target-feature=+crt-static",
+# 	"-C",
+# 	"link-arg=-lgcc",
+# 	# "-C",
+# 	# "link-arg=-s",
+# ]
+# runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 # rustflags = [
 # 	# "-C",
 # 	# "target-feature=+crt-static",
@@ -80,6 +110,9 @@ rustflags = [
 # 	# "-C",
 # 	# "link-self-contained=yes",
 # ]
+# [target.riscv64gc-unknown-none-elf]
+# linker = "riscv64-unknown-linux-gnu-gcc"
+# rustflags = ["-Clink-arg=-e_start", "-Ctarget-feature=-c"]
 
 [target.riscv32im-succinct-zkvm-elf]
 rustflags = [
@@ -95,7 +128,7 @@ rustflags = [
 	"link-arg=-s",
 ]
 # runner = "/usr/sysroot/lib/ld-linux-riscv32-lp32.so.1 --library-path /usr/sysroot/lib/"
-linker = "riscv32-unknown-elf-gcc"
+# linker = "riscv32-unknown-elf-gcc"
 
 
 [target.mips-unknown-linux-gnu]
@@ -117,71 +150,118 @@ rustflags = [
 	# "-L",
 	# "/home/semar/Work/rust-cross/buildroot/output_mips/staging",
 ]
-
 [target.mips-unknown-linux-musl]
-# ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
-# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
-# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
-# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
-linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-ld"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-ld"
 rustflags = [
 	"-L",
-	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
-	"-C",
-	"target-feature=+crt-static",
-	"-C",
-	"link-arg=-s",
-	"-C",
-	"target-feature=-soft-float",
-	"-C",
-	"link-arg=-static-libgcc",
-	"-C",
-	"embed-bitcode=yes",
-	"-L",
-	"link-arg=-static-libgcc",
-	# "target-feature=+soft-float",
-	# "-C",
-	# "link-self-contained=yes",
-	# "-C",
-	# "static",
-]
-# 	"-C",
-# 	"link-arg=-s",
-# 	# "-C",
-# 	# "-C",
-# 	# "link-self-contained=yes",
-# ]
+	"/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
 
-[target.mips-musl]
-# ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
-# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
-# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
-# linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
-linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
-rustflags = [
 	"-L",
-	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
+	"/home/semar/Work/rust-cross/buildroot/output/host/mips-buildroot-linux-musl/sysroot/lib",
+
+	"-C",
+	"link-arg=-s",
+
+	# "-L",
+	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+	# "-C",
+	# "link-arg=-Tmemory.x",
+	# "-C",
+	# "link-arg=-Tlink.x",
 	"-C",
 	"target-feature=+crt-static",
 	"-C",
-	"link-arg=-s",
-	"-C",
-	"target-feature=-soft-float",
-	"-C",
-	"link-arg=-static-libgcc",
-	"-C",
-	"embed-bitcode=yes",
-	"-L",
-	"link-arg=-static-libgcc",
-	# "target-feature=+soft-float",
+	"link-arg=-lgcc",
 	# "-C",
-	# "link-self-contained=yes",
-	# "-C",
-	# "static",
+	# "target-feature=+softfloat",
 ]
+
+[target.mips-unknown-linux-uclibc]
+linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-uclibc-gcc"
+rustflags = [
+	"-L",
+	"/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/mips-buildroot-linux-uclibc/12.3.0",
+
+	"-L",
+	"/home/semar/Work/rust-cross/buildroot/output/host/mips-buildroot-linux-uclibc/sysroot/lib",
+
+	"-C",
+	"link-arg=-s",
+
+	"-C",
+	"target-feature=+crt-static",
+	"-C",
+	"link-arg=-lgcc",
+	# "-C",
+	# "target-feature=+softfloat",
+]
+# [target.riscv32im-succinct-zkvm-elf]
+
+# [target.mips-unknown-linux-musl]
+# # ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# rustflags = [
+# 	"-L",
+# 	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
+# 	"-C",
+# 	"target-feature=+crt-static",
 # 	"-C",
 # 	"link-arg=-s",
-# 	# "-C",
+# 	"-C",
+# 	"target-feature=-soft-float",
+# 	"-C",
+# 	"link-arg=-static-libgcc",
+# 	"-C",
+# 	"embed-bitcode=yes",
+# 	"-L",
+# 	"link-arg=-static-libgcc",
+# 	# "target-feature=+soft-float",
 # 	# "-C",
 # 	# "link-self-contained=yes",
+# 	# "-C",
+# 	# "static",
 # ]
+# # 	"-C",
+# # 	"link-arg=-s",
+# # 	# "-C",
+# # 	# "-C",
+# # 	# "link-self-contained=yes",
+# # ]
+#
+# [target.mips-musl]
+# # ar = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ar"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-ld"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# # linker = "/home/semar/Work/rust-cross/buildroot/output_mips/host/bin/mips-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/mips-buildroot-linux-musl-gcc"
+# rustflags = [
+# 	"-L",
+# 	"buildroot/output/host/lib/gcc/mips-buildroot-linux-musl/12.3.0",
+# 	"-C",
+# 	"target-feature=+crt-static",
+# 	"-C",
+# 	"link-arg=-s",
+# 	"-C",
+# 	"target-feature=-soft-float",
+# 	"-C",
+# 	"link-arg=-static-libgcc",
+# 	"-C",
+# 	"embed-bitcode=yes",
+# 	"-L",
+# 	"link-arg=-static-libgcc",
+# 	# "target-feature=+soft-float",
+# 	# "-C",
+# 	# "link-self-contained=yes",
+# 	# "-C",
+# 	# "static",
+# ]
+# # 	"-C",
+# # 	"link-arg=-s",
+# # 	# "-C",
+# # 	# "-C",
+# # 	# "link-self-contained=yes",
+# # ]
