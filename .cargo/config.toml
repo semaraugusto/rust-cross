@@ -1,6 +1,6 @@
 [build]
-target = "riscv64gc-unknown-linux-gnu"
-rustflags = ["-C", "embed-bitcode=yes"]
+# target = "riscv64gc-unknown-linux-gnu"
+# rustflags = ["-C", "embed-bitcode=yes"]
 
 [target.riscv64gc-unknown-linux-gnu]
 rustflags = [
@@ -8,89 +8,105 @@ rustflags = [
 	# 	# "link-arg=-Tmemory.x",
 	# 	# "-C",
 	# 	# "link-arg=-Tlink.x",
-	"-C",
-	"target-feature=+crt-static",
+	# "-C",
+	# "target-feature=+crt-static",
+	"-Cpasses=loweratomic",
+	"-Clink-arg=-e_start",
+	"-Ctarget-feature=-c",
 	"-C",
 	"link-arg=-s",
+	# "-Clink-arg=-lgcc",
 	# "-C",
 	# "target-feature=+m",
 
 	# "-L",
 	# "/home/semar/Work/rust-cross/buildroot/output/target/lib/",
-	"-L",
-	"/usr/sysroot",
-	"-L",
-	"/usr/sysroot/lib",
+	# "-L",
+	# "/usr/sysroot",
+	# "-L",
+	# "/usr/sysroot/lib",
 
 	# "-L",
 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/target/lib/",
-	"-L",
-	"link-search=/usr/sysroot",
-	"-L",
-	"link-search=/usr/sysroot/lib",
+	# "-L",
+	# "link-search=/usr/sysroot",
+	# "-L",
+	# "link-search=/usr/sysroot/lib",
 ]
 # runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
-linker = "riscv64-unknown-linux-gnu-ld"
+linker = "riscv64-unknown-linux-gnu-gcc"
 
 [target.riscv64gc-unknown-linux-musl]
 linker = "/home/semar/Work/rust-cross/buildroot/output_riscv/host/bin/riscv64-buildroot-linux-musl-gcc"
+# linker = "/home/semar/Work/musl/crosstool-ng/.build/riscv64-unknown-linux-musl/buildtools/bin/riscv64-unknown-linux-musl-gcc"
 # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-ld"
 rustflags = [
-	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
-
-	"-L",
-	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/riscv64-buildroot-linux-musl/sysroot/lib",
-
+	"-Cpasses=loweratomic",
+	"-Clink-arg=-e_start",
+	# "-Ctarget-feature=-c",
 	"-C",
 	"link-arg=-s",
-
-	"-C",
-	"link-arg=-e_start",
-
-	# "-L",
-	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
-	# "-C",
-	# "link-arg=-Tmemory.x",
-	# "-C",
-	# "link-arg=-Tlink.x",
-	"-C",
-	"target-feature=+crt-static",
-	"-C",
-	"link-arg=-lgcc",
-	"-Ctarget-feature=-c",
-	"-Clink-arg=-Ttext=0x00200800",
-	# "-C",
-	# "target-feature=+m",
-	# "-C",
-	# "target-feature=+softfloat",
+	# "-Ctarget-feature=+crt-static",
+	"-Llink-search=/home/semar/Work/rust-cross/buildroot/output_riscv/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+	"-L",
+	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+	# "-Llink-search=/home/semar/Work/musl/crosstool-ng/.build/riscv64-unknown-linux-musl/buildtools",
+	# linker = "/home/semar/Work/musl/crosstool-ng/.build/riscv64-unknown-linux-musl/buildtools/bin/riscv64-unknown-linux-musl-gcc"
 ]
+# rustflags = [
+# 	"-L",
+# 	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+#
+# 	"-L",
+# 	"/home/semar/Work/rust-cross/buildroot/output_riscv/host/riscv64-buildroot-linux-musl/sysroot/lib",
+#
+# 	"-C",
+# 	"link-arg=-s",
+#
+# 	"-C",
+# 	"link-arg=-e_start",
+#
+# 	# "-L",
+# 	# "link-search=/home/semar/Work/rust-cross/buildroot/output/host/lib/gcc/riscv64-buildroot-linux-musl/12.3.0",
+# 	# "-C",
+# 	# "link-arg=-Tmemory.x",
+# 	# "-C",
+# 	# "link-arg=-Tlink.x",
+# 	"-C",
+# 	"target-feature=+crt-static",
+# 	"-C",
+# 	"link-arg=-lgcc",
+# 	"-Ctarget-feature=-c",
+# 	"-Clink-arg=-Ttext=0x00200800",
+# 	# "-C",
+# 	# "target-feature=+m",
+# 	# "-C",
+# 	# "target-feature=+softfloat",
+# ]
 # runner = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib/ld-musl-riscv64.so.1 --library-path /home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/riscv64-linux-musl/lib"
 # linker = "/home/semar/Work/rust-cross/riscv32-linux-musl-cross/riscv64-linux-musl-cross/bin/riscv64-linux-musl-gcc"
 # linker = "/home/semar/Work/rust-cross/buildroot/output_riscv/host/bin/riscv64-buildroot-linux-musl-ld"
 # linker = "/home/semar/Work/rust-cross/buildroot/output/host/bin/riscv64-buildroot-linux-musl-gcc"
 # [target.riscv32im-unknown-none-elf]
 [target.riscv64gc-unknown-none-elf]
-# linker = "riscv64-unknown-elf-gcc"
-# rustflags = [
-# 	"-C",
-# 	"passes=loweratomic",
-# 	"-Clink-arg=-e_start",
-# 	"-Ctarget-feature=-c",
-# 	"-Clink-arg=-Ttext=0x00200800",
-# 	# "-C",
-# 	# "link-arg=--fatal-warnings",
-# 	"-C",
-# 	"panic=abort",
-# 	"-L",
-# 	"/usr/sysroot/lib/",
-# 	"-C",
-# 	"target-feature=+crt-static",
-# 	"-C",
-# 	"link-arg=-lgcc",
-# 	# "-C",
-# 	# "link-arg=-s",
-# ]
+# linker = "/opt/riscv/bin/riscv64-unknown-elf-ld"
+linker = "riscv64-unknown-elf-ld"
+rustflags = [
+	"-Cpasses=loweratomic",
+	"-Clink-arg=-e_start",
+	"-Ctarget-feature=-c",
+	# "-L/opt/riscv/",
+	# "-L/opt/riscv/lib/",
+	"-Ctarget-feature=+crt-static",
+	"-Clink-arg=-s",
+	# "-Clink-arg=-Ttext=0x00200800",
+	# 	# "-C",
+	# 	# "link-arg=--fatal-warnings",
+	# 	"-C",
+	# 	"panic=abort",
+	# 	"-C",
+	# 	"link-arg=-lgcc",
+]
 # runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 # rustflags = [
 # 	# "-C",
@@ -115,23 +131,24 @@ rustflags = [
 # rustflags = ["-Clink-arg=-e_start", "-Ctarget-feature=-c"]
 
 [target.riscv32im-succinct-zkvm-elf]
-rustflags = [
-	# "-C",
-	# "link-arg=-Tmemory.x",
-	# "-C",
-	# "link-arg=-Tlink.x",
-	"-C",
-	"target-feature=+crt-static",
-	"-C",
-	"target-feature=+m",
-	"-C",
-	"link-arg=-s",
-]
+# rustflags = [
+# 	# "-C",
+# 	# "link-arg=-Tmemory.x",
+# 	# "-C",
+# 	# "link-arg=-Tlink.x",
+# 	"-C",
+# 	"target-feature=+crt-static",
+# 	"-C",
+# 	"target-feature=+m",
+# 	"-C",
+# 	"link-arg=-s",
+# ]
 # runner = "/usr/sysroot/lib/ld-linux-riscv32-lp32.so.1 --library-path /usr/sysroot/lib/"
 # linker = "riscv32-unknown-elf-gcc"
 
 
 [target.mips-unknown-linux-gnu]
+# linker = "riscv64-unknown-elf-gcc"
 # runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 linker = "mips-linux-gnu-ld"
 # linker = "mips-linux-gnu-gcc"

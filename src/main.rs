@@ -1,66 +1,47 @@
 #![no_main]
-// sp1_zkvm::entrypoint!(main);
-#![feature(restricted_std)]
-// mod entry;
+sp1_zkvm::entrypoint!(main);
 
-// fn float_math(x: f64, y: f64) -> f64 {
-//     x + y * y * 2.0
-// }
-//
-// fn do_string_stuff(x: &str, y: &str) -> String {
-//     String::from(x) + y
-// }
+use serde::{Deserialize, Serialize};
+use std::hint::black_box;
 
-// fn do_vec_stuff() -> f32 {
-//     let v = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-//     v.iter().sum()
-// }
-
-// fn main(_: i32, _: *const *const u8) -> () {
-//
-#[no_mangle]
-fn main() {
-    println!("Hello, world!");
-    // println!("The result of float_math is {}", float_math(1.0, 2.0));
-    // println!(
-    //     "The result of do_string_stuff is {}",
-    //     do_string_stuff("Hello ", "World!!")
-    // );
-    // println!("The result of do_vec_stuff is {}", do_vec_stuff());
-    // Ok(0)
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct MyPointUnaligned {
+    pub x: f64,
+    pub y: f64,
+    pub b: bool,
 }
-#[no_mangle]
-unsafe extern "C" fn __start() -> ! {
-    // This definition of __start differs from risc0_zkvm::guest in that it does not initialize the
-    // journal and will halt with empty output. It also assumes main follows the standard C
-    // convention, and uses the returned i32 value as the user exit code for halt.
-    let exit_code = {
-        extern "C" {
-            fn main(argc: i32, argv: *const *const u8) -> i32;
-        }
 
-        main(0, core::ptr::null())
+pub fn main() {
+    // let p1 = sp1_zkvm::io::read::<MyPointUnaligned>();
+    // println!("Read point: {:?}", p1);
+    //
+    // let p2 = sp1_zkvm::io::read::<MyPointUnaligned>();
+    // println!("Read point: {:?}", p2);
+    let p1 = black_box(MyPointUnaligned {
+        x: black_box(1.5),
+        y: black_box(2.5),
+        b: black_box(true),
+    });
+
+    let p2 = black_box(MyPointUnaligned {
+        x: black_box(0.5),
+        y: black_box(0.5),
+        b: black_box(false),
+    });
+
+    let p3: MyPointUnaligned = MyPointUnaligned {
+        x: p1.x + p2.x,
+        y: p1.y + p2.y,
+        b: p1.b && p2.b,
+    };
+    println!("1 Addition of 2 points: {:?}", p3);
+    // sp1_zkvm::io::commit(&p3);
+    let p4: MyPointUnaligned = MyPointUnaligned {
+        x: p1.x + p3.x,
+        y: p1.y + p3.y,
+        b: p1.b && p3.b,
     };
 
-    loop {
-        println!("Halted with exit code {}", exit_code);
-    }
+    println!("2 Addition of 2 points: {:?}", p4);
+    println!("3 END!");
 }
-
-static STACK_TOP: u32 = 0x0020_0400;
-// static STACK_TOP: u32 = 0x90000000;
-core::arch::global_asm!(
-    r#"
-.section .text._start
-.globl _start
-_start:
-    .option push;
-    .option norelax
-    la gp, __global_pointer$
-    .option pop
-    la sp, {0}
-    lw sp, 0(sp)
-    call __start;
-"#,
-    sym STACK_TOP
-);

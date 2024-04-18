@@ -10,15 +10,16 @@ edition = "2021"
 # crate-type = ["cdylib"]
 
 [dependencies]
-# sp1-zkvm = { path = "../sp1/zkvm/entrypoint" }
+sp1-zkvm = { path = "../sp1/zkvm/entrypoint" }
+serde = { version = "1.0.195", features = ["derive"] }
 # panic-halt = "0.2.0"
 # panic-abort = "0.3.2"
 
 # [profile.dev]
 # panic = "abort"
 
-[profile.release]
-panic = "abort"
+# [profile.release]
+# panic = "abort"
 # # lto = true
 # codegen-units = 1
 # opt-level = "z"
