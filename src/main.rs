@@ -1,23 +1,37 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-// use serde::{Deserialize, Serialize};
-// use std::hint::black_box;
-use candle_core::{Device, Tensor};
+use candle_core::{Device, Result, Tensor};
+use candle_nn::{Linear, Module};
 
-// fn main() -> Result<(), Box<dyn std::error::Error>> {
+struct Model {
+    first: Linear,
+    second: Linear,
+}
+
+impl Model {
+    fn forward(&self, image: &Tensor) -> Result<Tensor> {
+        let x = self.first.forward(image)?;
+        let x = x.relu()?;
+        self.second.forward(&x)
+    }
+}
+
 fn main() {
     let device = Device::Cpu;
 
-    // let a = Tensor::new(&[1., 2., 3., 4., 5.], &device).unwrap();
-    // let b = Tensor::new(&[1., 2., 3., 4., 5.], &device).unwrap();
-    let a = Tensor::new(&[[1., 2., 3.], [1., 2., 3.], [1., 2., 3.]], &device).unwrap();
-    let b = Tensor::new(&[[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]], &device).unwrap();
+    let weight = Tensor::randn(0f32, 1.0, (100, 784), &device).unwrap();
+    let bias = Tensor::randn(0f32, 1.0, (100, ), &device).unwrap();
+    let first = Linear::new(weight, Some(bias));
+    let weight = Tensor::randn(0f32, 1.0, (10, 100), &device).unwrap();
+    let bias = Tensor::randn(0f32, 1.0, (10, ), &device).unwrap();
+    let second = Linear::new(weight, Some(bias));
+    let model = Model { first, second };
 
-    let c = a.matmul(&b).unwrap();
-    // let c = a.mul(&b).unwrap();
+    let dummy_image = Tensor::randn(0f32, 1.0, (1, 784), &device).unwrap();
 
-    println!("{c:?}");
-    println!("`{c}`");
+    let digit = model.forward(&dummy_image).unwrap();
+    println!("Digit {digit:?} digit");
+    println!("Digit {digit} digit");
     // Ok(())
 }

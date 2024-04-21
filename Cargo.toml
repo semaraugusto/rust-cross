@@ -13,6 +13,7 @@ edition = "2021"
 sp1-zkvm = { path = "../sp1/zkvm/entrypoint" }
 serde = { version = "1.0.195", features = ["derive"] }
 candle-core = "0.4.1"
+candle-nn = "0.4.1"
 # panic-halt = "0.2.0"
 # panic-abort = "0.3.2"
 
