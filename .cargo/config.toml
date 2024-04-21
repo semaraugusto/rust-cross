@@ -33,7 +33,7 @@ rustflags = [
 	# "-L",
 	# "link-search=/usr/sysroot/lib",
 ]
-# runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
+runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 linker = "riscv64-unknown-linux-gnu-gcc"
 
 [target.riscv64gc-unknown-linux-musl]
@@ -131,18 +131,21 @@ rustflags = [
 # rustflags = ["-Clink-arg=-e_start", "-Ctarget-feature=-c"]
 
 [target.riscv32im-succinct-zkvm-elf]
-# rustflags = [
-# 	# "-C",
-# 	# "link-arg=-Tmemory.x",
-# 	# "-C",
-# 	# "link-arg=-Tlink.x",
-# 	"-C",
-# 	"target-feature=+crt-static",
-# 	"-C",
-# 	"target-feature=+m",
-# 	"-C",
-# 	"link-arg=-s",
-# ]
+rustflags = [
+	"-Cpasses=loweratomic",
+	"-Clinker-plugin-lto=yes",
+	"-Lplugin-opt=--mattr=+a",
+	# 	# "-C",
+	# 	# "link-arg=-Tmemory.x",
+	# 	# "-C",
+	# 	# "link-arg=-Tlink.x",
+	# 	"-C",
+	"-Ctarget-feature=+crt-static",
+	# "-Clink-arg=-latomic",
+	"-Ctarget-feature=+m",
+	# 	"-C",
+	# 	"link-arg=-s",
+]
 # runner = "/usr/sysroot/lib/ld-linux-riscv32-lp32.so.1 --library-path /usr/sysroot/lib/"
 # linker = "riscv32-unknown-elf-gcc"
 
