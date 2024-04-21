@@ -116,6 +116,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "candle-nn"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66a27533c8edfc915a6459f9850641ef523a829fa1a181c670766c1f752d873a"
+dependencies = [
+ "candle-core",
+ "half",
+ "num-traits",
+ "rayon",
+ "safetensors",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -711,6 +726,7 @@ name = "rust-cross"
 version = "0.1.0"
 dependencies = [
  "candle-core",
+ "candle-nn",
  "serde",
  "sp1-zkvm",
 ]
