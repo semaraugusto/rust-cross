@@ -1,5 +1,5 @@
 [build]
-target = "riscv32im-succinct-zkvm-elf"
+# target = "riscv32im-succinct-zkvm-elf"
 
 [target.riscv64gc-unknown-linux-gnu]
 rustflags = [
@@ -24,11 +24,11 @@ rustflags = [
 	# 	"-C",
 	# 	"link-arg=-lgcc",
 ]
+
 [target.riscv32im-succinct-zkvm-elf]
 rustflags = [
 	"-Cpasses=loweratomic",
 	"-Clinker-plugin-lto=yes",
-	"-Lplugin-opt=--mattr=+a",
 	"-Ctarget-feature=+crt-static",
 	"-Ctarget-feature=+m",
 	"-Clink-arg=-s",

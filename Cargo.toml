@@ -6,5 +6,16 @@ edition = "2021"
 [dependencies]
 sp1-zkvm = { path = "../sp1/zkvm/entrypoint" }
 serde = { version = "1.0.195", features = ["derive"] }
-candle-core = "0.4.1"
-candle-nn = "0.4.1"
+serde_json = "1.0.99"
+anyhow = "1.0.82"
+# hf-hub = "0.3.0"
+candle = { path = "../candle/candle-core", package = "candle-core", version = "0.5.0" }
+candle-nn = { path = "../candle/candle-nn", version = "0.5.0" }
+candle-transformers = { path = "../candle/candle-transformers", version = "0.5.0" }
+# candle-examples = { path = "../candle/candle-examples", version = "0.5.0" }
+# tokenizers = { version = "0.19.1", default-features = false, features = [
+# 	"onig",
+# ] }
+tokenizers = { path = "../tokenizers/tokenizers", version = "0.19.1", default-features = false, features = [
+	"onig",
+] }
