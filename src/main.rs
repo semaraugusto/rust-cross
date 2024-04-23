@@ -77,7 +77,7 @@ impl TextGeneration {
             Some(token) => token,
             None => anyhow::bail!("cannot find the <|endoftext|> token"),
         };
-        let start_gen = std::time::Instant::now();
+        // let start_gen = std::time::Instant::now();
         for index in 0..sample_len {
             let context_size = if index > 0 { 1 } else { tokens.len() };
             let start_pos = tokens.len().saturating_sub(context_size);
@@ -110,14 +110,13 @@ impl TextGeneration {
                 std::io::stdout().flush()?;
             }
         }
-        let dt = start_gen.elapsed();
+        // let dt = start_gen.elapsed();
         if let Some(rest) = self.tokenizer.decode_rest().map_err(E::msg)? {
             print!("{rest}");
         }
         std::io::stdout().flush()?;
         println!(
-            "\n{generated_tokens} tokens generated ({:.2} token/s)",
-            generated_tokens as f64 / dt.as_secs_f64(),
+            "\n{generated_tokens} tokens generated",
         );
         Ok(())
     }
@@ -252,7 +251,7 @@ fn main() {
         args.repeat_last_n
     );
 
-    let start = std::time::Instant::now();
+    // let start = std::time::Instant::now();
     // let api = Api::new()?;
     // let model_id = match args.model_id {
     //     Some(model_id) => model_id,
@@ -283,14 +282,15 @@ fn main() {
         None => panic!("No model weights file provided"),
     };
 
-    println!("retrieved the files in {:?}", start.elapsed());
+    // println!("retrieved the files in {:?}", start.elapsed());
     println!("model file path: {:?}", filenames);
     // let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(E::msg)?;
     // tokenizer_filename.t
     // let tokenizer = Tokenizer::from_bytes(include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json")).map_err(E::msg)?;
     let tokenizer = Tokenizer::from_bytes(include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json")).unwrap();
+    println!("tokenizer has been init");
 
-    let start = std::time::Instant::now();
+    // let start = std::time::Instant::now();
     let config = match args.which {
         Which::V1Orig => Config::stablelm_3b_4e1t(args.use_flash_attn),
         Which::V1 | Which::V1Zephyr | Which::V2 | Which::V2Zephyr | Which::Code => {
@@ -318,7 +318,7 @@ fn main() {
         (Model::StableLM(model), device)
     };
 
-    println!("loaded the model in {:?}", start.elapsed());
+    // println!("loaded the model in {:?}", start.elapsed());
 
     let mut pipeline = TextGeneration::new(
         model,
