@@ -1,21 +1,20 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-use anyhow::{Error as E, Result};
-// use clap::{Parser, ValueEnum};
+// use std::str::FromStr;
 
-// use candle_transformers::models::quantized_stable_lm::Model as QStableLM;
+use anyhow::{Error as E, Result};
 use candle_transformers::models::stable_lm::{Config, Model as StableLM};
 
 use candle::{DType, Device, Tensor};
-// use candle_examples::token_output_stream::TokenOutputStream;
-use candle_nn::VarBuilder;
+// use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
-// use hf_hub::{api::sync::Api, Repo, RepoType};
 use tokenizers::Tokenizer;
 
 mod token_output_stream;
 use token_output_stream::TokenOutputStream;
+
+mod utils;
 
 enum Model {
     StableLM(StableLM),
@@ -25,7 +24,6 @@ struct TextGeneration {
     model: Model,
     device: Device,
     tokenizer: TokenOutputStream,
-    // tokenizer: Tokenizer,
     logits_processor: LogitsProcessor,
     repeat_penalty: f32,
     repeat_last_n: usize,
@@ -47,7 +45,6 @@ impl TextGeneration {
         Self {
             model,
             tokenizer: TokenOutputStream::new(tokenizer),
-            // tokenizer,
             logits_processor,
             repeat_penalty,
             repeat_last_n,
@@ -115,9 +112,7 @@ impl TextGeneration {
             print!("{rest}");
         }
         std::io::stdout().flush()?;
-        println!(
-            "\n{generated_tokens} tokens generated",
-        );
+        println!("\n{generated_tokens} tokens generated",);
         Ok(())
     }
 }
@@ -132,71 +127,8 @@ enum Which {
     Code,
 }
 
-// #[derive(Parser, Debug)]
-// #[command(author, version, about, long_about = None)]
-// struct Args {
-//     /// Run on CPU rather than on GPU.
-//     #[arg(long)]
-//     cpu: bool,
-//
-//     /// Enable tracing (generates a trace-timestamp.json file).
-//     #[arg(long)]
-//     tracing: bool,
-//
-//     #[arg(long)]
-//     use_flash_attn: bool,
-//
-//     #[arg(long)]
-//     prompt: String,
-//
-//     /// The temperature used to generate samples.
-//     #[arg(long)]
-//     temperature: Option<f64>,
-//
-//     /// Nucleus sampling probability cutoff.
-//     #[arg(long)]
-//     top_p: Option<f64>,
-//
-//     /// The seed to use when generating random samples.
-//     #[arg(long, default_value_t = 299792458)]
-//     seed: u64,
-//
-//     /// The length of the sample to generate (in tokens).
-//     #[arg(long, short = 'n', default_value_t = 1000)]
-//     sample_len: usize,
-//
-//     #[arg(long)]
-//     model_id: Option<String>,
-//
-//     #[arg(long, default_value = "main")]
-//     revision: String,
-//
-//     #[arg(long, default_value = "v2")]
-//     which: Which,
-//
-//     #[arg(long)]
-//     tokenizer_file: Option<String>,
-//
-//     #[arg(long)]
-//     weight_files: Option<String>,
-//
-//     #[arg(long)]
-//     quantized: bool,
-//
-//     /// Penalty to be applied for repeating tokens, 1. means no penalty.
-//     #[arg(long, default_value_t = 1.1)]
-//     repeat_penalty: f32,
-//
-//     /// The context size to consider for the repeat penalty.
-//     #[arg(long, default_value_t = 64)]
-//     repeat_last_n: usize,
-// }
-
 #[derive(Debug)]
 struct ModelParams {
-    /// Run on CPU rather than on GPU.
-    cpu: bool,
-
     use_flash_attn: bool,
 
     prompt: String,
@@ -213,17 +145,10 @@ struct ModelParams {
     /// The length of the sample to generate (in tokens).
     sample_len: usize,
 
-    model_id: Option<String>,
-
-    revision: String,
-
     which: Which,
 
     // tokenizer_file: Option<String>,
-
     weight_files: Option<String>,
-
-    quantized: bool,
 
     /// Penalty to be applied for repeating tokens, 1. means no penalty.
     repeat_penalty: f32,
@@ -235,7 +160,7 @@ struct ModelParams {
 // fn main() -> Result<()> {
 fn main() {
     // let args = Args::parse();
-    let args = ModelParams { cpu: false, use_flash_attn: false, prompt: "What is the most efficient programming language in use? please just explain instead of providing links".to_string(), temperature: None, top_p: None, seed: 299792458, sample_len: 150, model_id: None, revision: "main".to_string(), which: Which::V1Orig, weight_files: Some("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/model.safetensors".to_string()), quantized: false, repeat_penalty: 1.1, repeat_last_n: 64 };
+    let args = ModelParams { use_flash_attn: false, prompt: "What is the most efficient programming language in use? please just explain instead of providing links".to_string(), temperature: None, top_p: None, seed: 299792458, sample_len: 150, which: Which::V1Orig, weight_files: Some("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/model.safetensors".to_string()), repeat_penalty: 1.1, repeat_last_n: 64 };
     println!("{:?}", args);
     println!(
         "avx: {}, neon: {}, simd128: {}, f16c: {}",
@@ -251,29 +176,6 @@ fn main() {
         args.repeat_last_n
     );
 
-    // let start = std::time::Instant::now();
-    // let api = Api::new()?;
-    // let model_id = match args.model_id {
-    //     Some(model_id) => model_id,
-    //     None => match args.which {
-    //         Which::V1Orig => "lmz/candle-stablelm-3b-4e1t".to_string(),
-    //         Which::V1 => "stabilityai/stablelm-3b-4e1t".to_string(),
-    //         Which::V1Zephyr => "stabilityai/stablelm-zephyr-3b".to_string(),
-    //         Which::Code => "stabilityai/stable-code-3b".to_string(),
-    //         Which::V2 => "stabilityai/stablelm-2-1_6b".to_string(),
-    //         Which::V2Zephyr => "stabilityai/stablelm-2-zephyr-1_6b".to_string(),
-    //     },
-    // };
-
-    // let repo = api.repo(Repo::with_revision(
-    //     model_id,
-    //     RepoType::Model,
-    //     args.revision,
-    // ));
-    // let tokenizer_filename = match args.tokenizer_file {
-    //     Some(file) => std::path::PathBuf::from(file),
-    //     None => panic!("No tokenizer file provided"),
-    // };
     let filenames = match args.weight_files {
         Some(files) => files
             .split(',')
@@ -282,54 +184,69 @@ fn main() {
         None => panic!("No model weights file provided"),
     };
 
-    // println!("retrieved the files in {:?}", start.elapsed());
     println!("model file path: {:?}", filenames);
-    // let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(E::msg)?;
-    // tokenizer_filename.t
-    // let tokenizer = Tokenizer::from_bytes(include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json")).map_err(E::msg)?;
-    let tokenizer = Tokenizer::from_bytes(include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json")).unwrap();
-    println!("tokenizer has been init");
+    // let tokenizer_bytes = include_bytes_aligned!(4, "/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json");
+    // println!("tokenizer bytes: {:?}", tokenizer_bytes.len());
+    // let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
 
-    // let start = std::time::Instant::now();
-    let config = match args.which {
-        Which::V1Orig => Config::stablelm_3b_4e1t(args.use_flash_attn),
-        Which::V1 | Which::V1Zephyr | Which::V2 | Which::V2Zephyr | Which::Code => {
-            panic!("not implemented")
-            // let config_filename = repo.get("config.json")?;
-            // let config = std::fs::read_to_string(config_filename)?;
-            // let mut config: Config = serde_json::from_str(&config)?;
-            // config.set_use_flash_attn(args.use_flash_attn);
-            // config
-        }
-    };
-    println!("config file path: {:?}", config);
+    // let tokenizer_bytes = include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json");
+    let tokenizer_addr = 0x0ffffffc as *const i32;
+    let tokenizer_len = unsafe { std::ptr::read(tokenizer_addr) };
+    println!("tokenizer len 0? `{:?}`", tokenizer_len);
 
-    // let device = candle_examples::device(args.cpu)?;
-    let device = Device::Cpu;
-    let (model, device) = {
-        // let dtype = if device.is_cuda() {
-        //     DType::BF16
-        // } else {
-        //     DType::F32
-        // };
-        let dtype = DType::F32;
-        let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device).unwrap() };
-        let model = StableLM::new(&config, vb).unwrap();
-        (Model::StableLM(model), device)
-    };
+    // let tokenizer_addr = 0x10000000 as *const i32;
+    let tokenizer_addr = 0x10000000usize;
+    // let tokenizer_len = unsafe { std::ptr::read(tokenizer_addr as *const u32) };
+    let magic = utils::read_numeric::<u32>(tokenizer_addr);
+    println!("[HERE] VALUE:: `{:?}`", magic);
+    assert_eq!(magic, 0x67676D6C);
+    let tokenizer_len = utils::read_numeric::<u32>(tokenizer_addr+4);
+    println!("[HERE] VALUE+4:: `{:?}`", tokenizer_len);
 
-    // println!("loaded the model in {:?}", start.elapsed());
+    let tokenizer_bytes = unsafe { std::slice::from_raw_parts((tokenizer_addr+8) as *const u8, tokenizer_len as usize) };
+    println!("tokenizer? `{:?}`", &tokenizer_bytes[0..12]);
+    //
+    // let tokenizer_addr = 0x10000003 as *const usize;
+    // let tokenizer_len = unsafe { *tokenizer_addr };
+    let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
+    println!("[SUCCESS] Tokenizer has been init!!!!!`{:?}`", tokenizer);
 
-    let mut pipeline = TextGeneration::new(
-        model,
-        tokenizer,
-        args.seed,
-        args.temperature,
-        args.top_p,
-        args.repeat_penalty,
-        args.repeat_last_n,
-        &device,
-    );
-    pipeline.run(&args.prompt, args.sample_len).unwrap();
-    // Ok(())
+    // println!("tokenizer str len: {:?}", tokenizer_bytes.len());
+    // // println!("tokenizer str lines[91670..91690]: {:?}", lines);
+    // // println!("tokenizer json: {:?}", tokenizer_json);
+    // println!("tokenizer str: {:?}", &tokenizer_bytes[1956970..1956980]);
+    // // if tokenizer_str.len() > 1956980 {
+    // //     println!("tokenizer str: {:?}", &tokenizer_bytes[1956970..1956980]);
+    // // }
+    //
+    // // let tokenizer = Tokenizer::from_str(tokenizer_str).unwrap();
+    //
+    //
+    // let config = match args.which {
+    //     Which::V1Orig => Config::stablelm_3b_4e1t(args.use_flash_attn),
+    //     Which::V1 | Which::V1Zephyr | Which::V2 | Which::V2Zephyr | Which::Code => {
+    //         panic!("not implemented")
+    //     }
+    // };
+    // println!("config file path: {:?}", config);
+    //
+    // let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
+    // println!("tokenizer has been init");
+    //
+    // let device = Device::Cpu;
+    // let dtype = DType::F32;
+    // let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device).unwrap() };
+    // let model = Model::StableLM(StableLM::new(&config, vb).unwrap());
+    //
+    // let mut pipeline = TextGeneration::new(
+    //     model,
+    //     tokenizer,
+    //     args.seed,
+    //     args.temperature,
+    //     args.top_p,
+    //     args.repeat_penalty,
+    //     args.repeat_last_n,
+    //     &device,
+    // );
+    // pipeline.run(&args.prompt, args.sample_len).unwrap();
 }
