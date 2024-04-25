@@ -185,29 +185,7 @@ fn main() {
     };
 
     println!("model file path: {:?}", filenames);
-    // let tokenizer_bytes = include_bytes_aligned!(4, "/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json");
-    // println!("tokenizer bytes: {:?}", tokenizer_bytes.len());
-    // let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
-
-    // let tokenizer_bytes = include_bytes!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json");
-    let tokenizer_addr = 0x0ffffffc as *const i32;
-    let tokenizer_len = unsafe { std::ptr::read(tokenizer_addr) };
-    println!("tokenizer len 0? `{:?}`", tokenizer_len);
-
-    // let tokenizer_addr = 0x10000000 as *const i32;
-    let tokenizer_addr = 0x10000000usize;
-    // let tokenizer_len = unsafe { std::ptr::read(tokenizer_addr as *const u32) };
-    let magic = utils::read_numeric::<u32>(tokenizer_addr);
-    println!("[HERE] VALUE:: `{:?}`", magic);
-    assert_eq!(magic, 0x67676D6C);
-    let tokenizer_len = utils::read_numeric::<u32>(tokenizer_addr+4);
-    println!("[HERE] VALUE+4:: `{:?}`", tokenizer_len);
-
-    let tokenizer_bytes = unsafe { std::slice::from_raw_parts((tokenizer_addr+8) as *const u8, tokenizer_len as usize) };
-    println!("tokenizer? `{:?}`", &tokenizer_bytes[0..12]);
-    //
-    // let tokenizer_addr = 0x10000003 as *const usize;
-    // let tokenizer_len = unsafe { *tokenizer_addr };
+    let tokenizer_bytes = utils::get_tokenizer_bytes();
     let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
     println!("[SUCCESS] Tokenizer has been init!!!!!`{:?}`", tokenizer);
 

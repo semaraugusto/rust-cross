@@ -1029,7 +1029,6 @@ dependencies = [
  "candle-nn",
  "candle-transformers",
  "include_bytes_aligned",
- "num-traits",
  "serde",
  "serde_json",
  "sp1-zkvm",
