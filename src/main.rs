@@ -168,7 +168,7 @@ pub fn load_model(device: &Device) -> LinearModel {
     Model::new(vb).unwrap()
 }
 
-// #[cfg(target_os = "zkvm")]
+#[cfg(target_os = "zkvm")]
 // #[cfg(not(target_os="zkvm"))]
 // pub fn load_model() -> Vec<u8> {
 pub fn load_model(device: &Device) -> LinearModel {
@@ -236,22 +236,21 @@ pub fn load_model(device: &Device) -> LinearModel {
     LinearModel::new(vb).unwrap()
 }
 
-// #[cfg(not(target_os = "zkvm"))]
-// pub fn load_input(device: &Device) -> Tensor {
-//     let m = if let Some(directory) = args.local_mnist {
-//         candle_datasets::vision::mnist::load_dir(directory)?
-//     } else {
-//         candle_datasets::vision::mnist::load()?
-//     };
-//     println!("train-images: {:?}", m.train_images.shape());
-//     println!("train-labels: {:?}", m.train_labels.shape());
-//     println!("test-images: {:?}", m.test_images.shape());
-//     println!("test-labels: {:?}", m.test_labels.shape());
-// }
+#[cfg(not(target_os = "zkvm"))]
+pub fn load_input(device: &Device) -> Tensor {
+    let m = candle_datasets::vision::mnist::load().unwrap();
+    println!("train-images: {:?}", m.train_images.shape());
+    println!("train-labels: {:?}", m.train_labels.shape());
+    println!("test-images: {:?}", m.test_images.shape());
+    println!("test-labels: {:?}", m.test_labels.shape());
+    let image = m.test_images.get(0).unwrap().unsqueeze(0).unwrap();
+    println!("image: {:?}", image.shape());
+    image
+}
 
-// #[cfg(target_os = "zkvm")]
 // #[cfg(not(target_os="zkvm"))]
 // pub fn load_model() -> Vec<u8> {
+#[cfg(target_os = "zkvm")]
 pub fn load_input(device: &Device) -> Tensor {
     // pub fn load_model_2(config: Config, device: &Device) -> Result<StableLM> {
     // let dtype = DType::F32;
@@ -268,7 +267,7 @@ pub fn load_input(device: &Device) -> Tensor {
     let tensor_bytes =
         // unsafe { std::slice::from_raw_parts(addr as *const u8, tensor_byte_len as usize) };
         unsafe { Vec::from_raw_parts(tensor_ptr, tensor_byte_len as usize, tensor_byte_len as usize) };
-    addr += tensor_byte_len as usize;
+    addr += tensor_byte_len as usize; // NOTE: NOT NEEDED.
     println!("tensor starting bytes: `{:?}`", &tensor_bytes[..12]);
     println!(
         "tensor end bytes: `{:?}`",
@@ -276,46 +275,20 @@ pub fn load_input(device: &Device) -> Tensor {
     );
     println!("tensor byte_len bytes: `{:?}`", tensor_byte_len);
 
-    // let mut normalized = Vec::with_capacity(tensor_byte_len);
+    // let mut normalized = Vec::with_capacity(tensor_byte_len); // NOTE: VEC::WITH_CAPACITY IS BUGGED.
     let mut normalized = vec![];
     for (_, byte) in tensor_bytes.iter().enumerate() {
-        // println!("byte: `{:?}`", byte);
         normalized.push(*byte as f32 / 255.0);
+        // normalized[i] = (*byte as f32 / 255.0);
     }
 
-    let tensor =
-        // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap();
-        // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap();
-        Tensor::from_vec(normalized, &[1, tensor_byte_len], device).unwrap();
-    // let tensor_u8 = tensor_u8.apply
-    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap();
-    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap();
-    // println!("tensor sum: `{}`", tensor.sum(0).unwrap());
-    tensor
+    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap()
+    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap()
+    Tensor::from_vec(normalized, &[1, tensor_byte_len], device).unwrap()
 }
 
-// #[derive(Parser)]
 struct Args {
-    // #[clap(value_enum, default_value_t = WhichModel::Linear)]
     model: WhichModel,
-
-    // #[arg(long)]
-    learning_rate: Option<f64>,
-
-    // #[arg(long, default_value_t = 200)]
-    epochs: usize,
-
-    /// The file where to save the trained weights, in safetensors format.
-    // #[arg(long)]
-    save: Option<String>,
-
-    /// The file where to load the trained weights from, in safetensors format.
-    // #[arg(long)]
-    load: Option<String>,
-
-    /// The directory where to load the dataset from, in ubyte format.
-    // #[arg(long)]
-    local_mnist: Option<String>,
 }
 
 // pub fn main() -> anyhow::Result<()> {
@@ -324,43 +297,20 @@ pub fn main() {
     println!("Starting");
     let args = Args {
         model: WhichModel::Linear,
-        learning_rate: Some(1.),
-        epochs: 20,
-        save: None,
-        load: None,
-        local_mnist: None,
     };
     let device = Device::Cpu;
-    // Load the dataset
-    // let m = if let Some(directory) = args.local_mnist {
-    //     candle_datasets::vision::mnist::load_dir(directory)?
-    // } else {
-    //     candle_datasets::vision::mnist::load()?
-    // };
-    // let input = utils::load_input();
-    // println!("train-images: {:?}", m.train_images.shape());
-    // println!("train-labels: {:?}", m.train_labels.shape());
-    // println!("test-images: {:?}", m.test_images.shape());
-    // println!("test-labels: {:?}", m.test_labels.shape());
     let model = load_model(&device);
     let input = load_input(&device);
 
-    let default_learning_rate = match args.model {
-        WhichModel::Linear => 1.,
-        WhichModel::Mlp => 0.05,
-    };
-    let training_args = TrainingArgs {
-        epochs: args.epochs,
-        learning_rate: args.learning_rate.unwrap_or(default_learning_rate),
-        load: args.load,
-        save: args.save,
-    };
-    println!("training_args: `{:?}`", training_args);
-    let output = model.forward(&input).unwrap();
-    println!("output tensor: `{:?}`", output);
-    println!("output tensor: `{}`", output);
-    // match args.model {
-    //     WhichModel::Linear => training_loop::<LinearModel>(m, &training_args),
-    //     WhichModel::Mlp => training_loop::<Mlp>(m, &training_args),
+    // let training_args = TrainingArgs {
+    //     epochs: args.epochs,
+    //     learning_rate: args.learning_rate.unwrap_or(default_learning_rate),
+    //     load: args.load,
+    //     save: args.save,
     // };
+    // println!("training_args: `{:?}`", training_args);
+    let output = model.forward(&input).unwrap();
+    let pred = output.argmax(1).unwrap();
+    println!("output tensor: `{:?}`", output);
+    println!("pred: `{}`", pred);
 }
