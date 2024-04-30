@@ -2,15 +2,25 @@
 # target = "riscv32im-succinct-zkvm-elf"
 
 [target.riscv64gc-unknown-linux-gnu]
+# rustflags = [
+# 	"-Cpasses=loweratomic",
+# 	"-Clink-arg=-e_start",
+# 	"-Ctarget-feature=-c",
+# 	"-C",
+# 	"link-arg=-s",
+# ]
 rustflags = [
 	"-Cpasses=loweratomic",
-	"-Clink-arg=-e_start",
-	"-Ctarget-feature=-c",
-	"-C",
-	"link-arg=-s",
+	"-Clinker-plugin-lto=yes",
+	# "-Ctarget-feature=+crt-static",
+	"-Ctarget-feature=+m",
+	"-Clink-arg=-s",
 ]
-runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
+# runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
 linker = "riscv64-unknown-linux-gnu-gcc"
+
+[target.riscv64gc-unknown-linux-musl]
+linker = "/home/semar/x-tools/riscv64-unknown-linux-musl/riscv64-unknown-linux-musl/bin/ld"
 
 [target.riscv64gc-unknown-none-elf]
 # linker = "/opt/riscv/bin/riscv64-unknown-elf-ld"

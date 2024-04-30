@@ -1,3 +1,4 @@
+// Taken from: https://github.com/huggingface/candle/blob/main/candle-examples/src/token_output_stream.rs
 use candle::Result;
 
 /// This is a wrapper around a tokenizer to ensure that tokens can be returned to the user in a
