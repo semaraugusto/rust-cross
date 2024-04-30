@@ -203,14 +203,14 @@ pub fn load_model(device: &Device) -> LinearModel {
         addr += std::mem::size_of::<u32>();
         // let mut tensor_shape = vec![];
         let mut tensor_shape = vec![];
-        let mut tensor_byte_len = 1;
+        let mut tensor_num_elems = 1;
         for _ in 0..tensor_dims {
             let shape_i = utils::read_numeric::<usize>(addr);
-            tensor_byte_len *= shape_i;
+            tensor_num_elems *= shape_i;
             addr += std::mem::size_of::<usize>();
             tensor_shape.push(shape_i)
         }
-        tensor_byte_len *= std::mem::size_of::<f32>() as usize;
+        let tensor_byte_len = tensor_num_elems * std::mem::size_of::<f32>() as usize;
         println!("tensor_shape!: `{:?}`", tensor_shape);
         let tensor_ptr = addr as *mut u8;
         let tensor_bytes =
@@ -222,9 +222,9 @@ pub fn load_model(device: &Device) -> LinearModel {
             "tensor end bytes: `{:?}`",
             &tensor_bytes[tensor_bytes.len() - 12..]
         );
-        println!("tensor sum: `{:?}`", tensor_bytes.iter().sum::<u8>());
         let tensor =
             Tensor::from_raw_buffer(&tensor_bytes, DType::F32, &tensor_shape, device).unwrap();
+        // println!("tensor sum: `{}`", tensor.sum(0).unwrap());
         println!("tensor: `{:?}`", tensor);
         println!("tensor debug: `{:?}`", tensor);
         tensors.insert(tensor_name, tensor);
@@ -234,6 +234,64 @@ pub fn load_model(device: &Device) -> LinearModel {
 
     let vb = VarBuilder::from_tensors(tensors, dtype, device);
     LinearModel::new(vb).unwrap()
+}
+
+// #[cfg(not(target_os = "zkvm"))]
+// pub fn load_input(device: &Device) -> Tensor {
+//     let m = if let Some(directory) = args.local_mnist {
+//         candle_datasets::vision::mnist::load_dir(directory)?
+//     } else {
+//         candle_datasets::vision::mnist::load()?
+//     };
+//     println!("train-images: {:?}", m.train_images.shape());
+//     println!("train-labels: {:?}", m.train_labels.shape());
+//     println!("test-images: {:?}", m.test_images.shape());
+//     println!("test-labels: {:?}", m.test_labels.shape());
+// }
+
+// #[cfg(target_os = "zkvm")]
+// #[cfg(not(target_os="zkvm"))]
+// pub fn load_model() -> Vec<u8> {
+pub fn load_input(device: &Device) -> Tensor {
+    // pub fn load_model_2(config: Config, device: &Device) -> Result<StableLM> {
+    // let dtype = DType::F32;
+
+    let starting_input_addr = 0x10000000usize;
+    let mut addr = starting_input_addr;
+    let shape_0 = utils::read_numeric::<usize>(addr);
+    addr += std::mem::size_of::<usize>();
+    let shape_1 = utils::read_numeric::<usize>(addr);
+    let tensor_byte_len = shape_0 * shape_1;
+    addr += std::mem::size_of::<usize>();
+
+    let tensor_ptr = addr as *mut u8;
+    let tensor_bytes =
+        // unsafe { std::slice::from_raw_parts(addr as *const u8, tensor_byte_len as usize) };
+        unsafe { Vec::from_raw_parts(tensor_ptr, tensor_byte_len as usize, tensor_byte_len as usize) };
+    addr += tensor_byte_len as usize;
+    println!("tensor starting bytes: `{:?}`", &tensor_bytes[..12]);
+    println!(
+        "tensor end bytes: `{:?}`",
+        &tensor_bytes[tensor_bytes.len() - 12..]
+    );
+    println!("tensor byte_len bytes: `{:?}`", tensor_byte_len);
+
+    // let mut normalized = Vec::with_capacity(tensor_byte_len);
+    let mut normalized = vec![];
+    for (_, byte) in tensor_bytes.iter().enumerate() {
+        // println!("byte: `{:?}`", byte);
+        normalized.push(*byte as f32 / 255.0);
+    }
+
+    let tensor =
+        // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap();
+        // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap();
+        Tensor::from_vec(normalized, &[1, tensor_byte_len], device).unwrap();
+    // let tensor_u8 = tensor_u8.apply
+    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap();
+    // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap();
+    // println!("tensor sum: `{}`", tensor.sum(0).unwrap());
+    tensor
 }
 
 // #[derive(Parser)]
@@ -285,6 +343,7 @@ pub fn main() {
     // println!("test-images: {:?}", m.test_images.shape());
     // println!("test-labels: {:?}", m.test_labels.shape());
     let model = load_model(&device);
+    let input = load_input(&device);
 
     let default_learning_rate = match args.model {
         WhichModel::Linear => 1.,
@@ -297,6 +356,9 @@ pub fn main() {
         save: args.save,
     };
     println!("training_args: `{:?}`", training_args);
+    let output = model.forward(&input).unwrap();
+    println!("output tensor: `{:?}`", output);
+    println!("output tensor: `{}`", output);
     // match args.model {
     //     WhichModel::Linear => training_loop::<LinearModel>(m, &training_args),
     //     WhichModel::Mlp => training_loop::<Mlp>(m, &training_args),
