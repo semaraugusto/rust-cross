@@ -236,7 +236,8 @@ pub fn load_model(device: &Device) -> LinearModel {
     LinearModel::new(vb).unwrap()
 }
 
-#[cfg(not(target_os = "zkvm"))]
+// #[cfg(not(target_os = "zkvm"))]
+#[cfg(feature = "candle-datasets")]
 pub fn load_input(device: &Device) -> Tensor {
     let m = candle_datasets::vision::mnist::load().unwrap();
     println!("train-images: {:?}", m.train_images.shape());
