@@ -200,17 +200,18 @@ pub fn load_model(device: &Device) -> LinearModel {
         println!("tensor_name: `{:?}`", tensor_name);
         println!("name_len: `{:?}`", tensor_name.len());
         let tensor_dims = utils::read_numeric::<u32>(addr);
+        println!("tensor_dims: `{:?}`", tensor_dims);
         addr += std::mem::size_of::<u32>();
         // let mut tensor_shape = vec![];
         let mut tensor_shape = vec![];
         let mut tensor_num_elems = 1;
         for _ in 0..tensor_dims {
-            let shape_i = utils::read_numeric::<usize>(addr);
+            let shape_i = utils::read_numeric::<u32>(addr);
             tensor_num_elems *= shape_i;
-            addr += std::mem::size_of::<usize>();
-            tensor_shape.push(shape_i)
+            addr += std::mem::size_of::<u32>();
+            tensor_shape.push(shape_i as usize)
         }
-        let tensor_byte_len = tensor_num_elems * std::mem::size_of::<f32>() as usize;
+        let tensor_byte_len = tensor_num_elems * std::mem::size_of::<f32>() as u32;
         println!("tensor_shape!: `{:?}`", tensor_shape);
         let tensor_ptr = addr as *mut u8;
         let tensor_bytes =
@@ -225,7 +226,7 @@ pub fn load_model(device: &Device) -> LinearModel {
         let tensor =
             Tensor::from_raw_buffer(&tensor_bytes, DType::F32, &tensor_shape, device).unwrap();
         // println!("tensor sum: `{}`", tensor.sum(0).unwrap());
-        println!("tensor: `{:?}`", tensor);
+        println!("tensor: `{}`", tensor);
         println!("tensor debug: `{:?}`", tensor);
         tensors.insert(tensor_name, tensor);
     }
@@ -258,11 +259,11 @@ pub fn load_input(device: &Device) -> Tensor {
 
     let starting_input_addr = 0x10000000usize;
     let mut addr = starting_input_addr;
-    let shape_0 = utils::read_numeric::<usize>(addr);
-    addr += std::mem::size_of::<usize>();
-    let shape_1 = utils::read_numeric::<usize>(addr);
+    let shape_0 = utils::read_numeric::<u32>(addr);
+    addr += std::mem::size_of::<u32>();
+    let shape_1 = utils::read_numeric::<u32>(addr);
     let tensor_byte_len = shape_0 * shape_1;
-    addr += std::mem::size_of::<usize>();
+    addr += std::mem::size_of::<u32>();
 
     let tensor_ptr = addr as *mut u8;
     let tensor_bytes =
@@ -277,15 +278,23 @@ pub fn load_input(device: &Device) -> Tensor {
     println!("tensor byte_len bytes: `{:?}`", tensor_byte_len);
 
     // let mut normalized = Vec::with_capacity(tensor_byte_len); // NOTE: VEC::WITH_CAPACITY IS BUGGED.
+    println!("starting normalization");
     let mut normalized = vec![];
+    // println!("starting normalized {:?}", normalized);
     for (_, byte) in tensor_bytes.iter().enumerate() {
-        normalized.push(*byte as f32 / 255.0);
+        println!("curr byte {:?}", *byte);
+        let val = *byte as f32 / 255.0;
+        // let val = *byte as f32;
+        normalized.push(val);
+        // println!("normalized value {}", val);
         // normalized[i] = (*byte as f32 / 255.0);
     }
+    // println!("normalized: `{:?}`", &normalized[..12]);
 
     // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[shape_0, shape_1], device).unwrap()
     // Tensor::from_raw_buffer(&tensor_bytes, DType::U8, &[1, tensor_byte_len], device).unwrap()
-    Tensor::from_vec(normalized, &[1, tensor_byte_len], device).unwrap()
+    Tensor::from_vec(normalized, &[1, tensor_byte_len as usize], device).unwrap()
+    // Tensor::from_vec(tensor_bytes, &[1, tensor_byte_len as usize], device).unwrap()
 }
 
 struct Args {
@@ -301,7 +310,9 @@ pub fn main() {
     };
     let device = Device::Cpu;
     let model = load_model(&device);
+    println!("model: `{:?}`", model.linear);
     let input = load_input(&device);
+    println!("input: `{:?}`", input);
 
     // let training_args = TrainingArgs {
     //     epochs: args.epochs,
@@ -309,8 +320,10 @@ pub fn main() {
     //     load: args.load,
     //     save: args.save,
     // };
-    // println!("training_args: `{:?}`", training_args);
+    println!("forwarding: `{:?}`", input.shape());
+
     let output = model.forward(&input).unwrap();
+    println!("output: `{:?}`", output.shape());
     let pred = output.argmax(1).unwrap();
     println!("output tensor: `{:?}`", output);
     println!("pred: `{}`", pred);
