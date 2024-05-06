@@ -44,6 +44,15 @@ rustflags = [
 	"-Clink-arg=-s",
 ]
 # linker = "riscv32-unknown-elf-gcc"
+[target.riscv64im-unicorn-zkvm-elf]
+rustflags = [
+	"-Cpasses=loweratomic",
+	"-Clinker-plugin-lto=yes",
+	"-Ctarget-feature=+crt-static",
+	"-Ctarget-feature=+m",
+	"-Clink-arg=-s",
+]
+# linker = "riscv32-unknown-elf-gcc"
 
 
 [target.mips-unknown-linux-gnu]
