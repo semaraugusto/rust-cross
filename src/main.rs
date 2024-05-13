@@ -206,7 +206,7 @@ pub fn load_model(device: &Device) -> Result<LinearModel> {
 
     println!("tensor keys: `{:?}`", tensors.keys());
 
-    let vb = VarBuilder::from_tensors(tensors.clone(), dtype, device);
+    let vb = VarBuilder::from_tensors(tensors, dtype, device);
     Ok(LinearModel::new(vb).unwrap())
 }
 
@@ -291,6 +291,8 @@ pub fn main() {
     println!("start loading input...");
     let input = load_input(&device);
     println!("input loaded: {}", input);
-    let output = model.forward(&input).unwrap();
+    let output = model.forward(&input.clone()).unwrap();
     println!("output: {}", output);
+    let pred = output.argmax(1).unwrap();
+    println!("pred: {}", pred);
 }
