@@ -7,6 +7,7 @@ use anyhow::Error as E;
 // use candle::
 use candle::{DType, Device, Result, Shape, Tensor, D};
 use candle_nn::{loss, ops, Conv2d, Linear, Module, ModuleT, Optimizer, VarBuilder, VarMap};
+use rand::prelude::*;
 use std::{borrow::Borrow, collections::HashMap};
 
 const IMAGE_DIM: usize = 784;
@@ -298,122 +299,42 @@ pub fn main() {
     // let size = 53; // (i >= 53 and i <= 56)    initial vec: ok - second vec: 0-vec    - output 0-vec
     // let size = 57; // (i >= 57 and i <= 60)    initial vec: ok - second vec: ok    - output 0-vec
     // let size = 61; // (i >= 61 and i <= 68)    initial vec: ok - second vec: ok    - output ok
-    //
 
     let size = 4;
-    // let mut tensors: HashMap<String, Tensor> = HashMap::new();
-    // println!("u8 mem size: `{:?}`", core::mem::size_of::<u8>());
-    // println!("u32 mem size: `{:?}`", core::mem::size_of::<u32>());
-    // println!("u64 mem size: `{:?}`", core::mem::size_of::<u64>());
-    // println!("i32 mem size: `{:?}`", core::mem::size_of::<i32>());
-    // println!("i64 mem size: `{:?}`", core::mem::size_of::<i64>());
-    // println!("f32 mem size: `{:?}`", core::mem::size_of::<f32>());
-    // println!("f64 mem size: `{:?}`", core::mem::size_of::<f64>());
-    // println!("Tensor mem size: `{:?}`", core::mem::size_of::<Tensor>());
-    // println!("Tensor align: `{:?}`", core::mem::align_of::<Tensor>());
-    let weight_tensor = Tensor::rand(0f32, 1f32, &[size], &device).unwrap();
-    println!(
-        "weight_tensor storage: {:?}",
-        weight_tensor.storage_and_layout()
-    );
-    // println!(
-    //     "weight_tensor has been loaded: {:?}",
-    //     weight_tensor.to_vec1::<f32>().unwrap()
-    // );
-    // println!("weight_tensor layout: {:?}", weight_tensor.layout());
-    // println!("weight_tensor pointer addr: `{:p}`", &weight_tensor);
-    println!(
-        "weight_tensor storage pointer addr: `{:p}`",
-        &weight_tensor.storage_and_layout().0
-    );
-    // let input = Tensor::ones(&[10], DType::U32, &device).unwrap();
-    let input = Tensor::rand(0f32, 1f32, &[size], &device).unwrap();
-    let input_storage = input.storage_and_layout().0;
-    println!("input storage: {:?}", &input_storage);
-    println!("input storage: {:?}", &input_storage);
-    println!("input storage: {:?}", &input_storage);
-    // println!("input storage: {:?}", input_storage);
-    // println!("input storage: {:?}", input_storage);
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!(
-    //     "input has been loaded: {:?}",
-    //     input.to_vec1::<f32>().unwrap()
-    // );
-    // println!("input layout: {:?}", input.layout());
-    // println!("input pointer addr: `{:p}`", &input);
-    // println!("input storage pointer addr: `{:p}`", &input_storage);
-    println!(
-        "input storage pointer addr: `{:p}`",
-        &input.storage_and_layout().0
-    );
-    let output = weight_tensor.add(&input).unwrap();
-    // println!(
-    //     "output has been added: {:?}",
-    //     output.to_vec1::<f32>().unwrap()
-    // );
-    // println!(
-    //     "input has been loaded: {:?}",
-    //     input.to_vec1::<f32>().unwrap()
-    // );
-    // println!(
-    //     "weight_tensor has been loaded: {:?}",
-    //     weight_tensor.to_vec1::<f32>().unwrap()
-    // );
+    // let weight_tensor = Tensor::rand(0f32, 1f32, &[size], &device).unwrap();
     // println!(
     //     "weight_tensor storage: {:?}",
     //     weight_tensor.storage_and_layout()
     // );
-    println!("output storage: {:?}", output.storage_and_layout());
-    // println!("input storage: {:?}", input.storage_and_layout());
-    // println!(
-    //     "output has been multiplied: {:?}",
-    //     output.to_vec2::<f32>().unwrap()[0]
-    // );
-    // // println!("output layout: {:?}", output.layout());
-    // println!("output pointer addr: `{:p}`", &output);
-    println!(
-        "output storage pointer addr: `{:p}`",
-        &output.storage_and_layout().0
-    );
-    // let pred = output.argmax(1).unwrap();
-    // println!("pred: `{}`", pred);
-    //
-    //
+    let mut rng = rand::thread_rng();
+    let mut weight_values = Vec::with_capacity(size);
+    let uniform = rand::distributions::Uniform::new(0f32, 1f32);
+    for _i in 0..size {
+        weight_values.push(rng.sample::<f32, _>(uniform))
+    }
+    println!("weight_values: {:?}", weight_values);
 
-    //
-    // tensors.insert("weight".to_string(), weight_tensor);
-    // let bias_tensor = Tensor::ones(&[10], DType::F32, &device).unwrap();
-    // tensors.insert("bias".to_string(), bias_tensor);
-    // let vb = VarBuilder::from_tensors(tensors, dtype, &device);
-    // let model = LinearModel::new(vb).unwrap();
-    // println!(
-    //     "model has been loaded: {:?}",
-    //     model.linear.weight().to_vec2::<f32>().unwrap()[0]
-    // );
-    // let input = Tensor::ones(&[1, 784], DType::F32, &device).unwrap();
-    // // println!(
-    // //     "model has been loaded: {:?}",
-    // //     model.linear.weight().to_vec2::<f32>().unwrap()[0]
-    // // );
-    // println!("input has been loaded: {:?}", input.to_vec2::<f32>());
-    // println!("model weights shape: {:?}", model.linear.weight().shape());
-    // println!("input shape: {:?}", input.shape());
+    let mut input_values = Vec::with_capacity(size);
+    for _i in 0..size {
+        input_values.push(rng.sample::<f32, _>(uniform))
+    }
+    println!("input_values: {:?}", input_values);
 
-    // let output = model.forward(&input.unsqueeze(0).unwrap()).unwrap();
-    // println!("-------------------------------------------------------");
-    // println!(
-    //     "model tensor[0]: `{:?}`",
-    //     model.linear.weight().to_vec2::<f32>().unwrap()[0]
-    // );
-    // println!("-------------------------------------------------------");
-    // println!("input tensor: `{:?}`", input.to_vec1::<f32>());
-    // println!("-------------------------------------------------------");
-    // println!("output tensor: `{:?}`", output.to_vec2::<f32>());
-    // println!("-------------------------------------------------------");
-    // let pred = output.argmax(1).unwrap();
-    // println!("pred: `{}`", pred);
+    let mut expected_output = Vec::with_capacity(size);
+    for i in 0..size {
+        expected_output.push(weight_values[i] + input_values[i])
+    }
+    println!("expected_output: {:?}", expected_output);
+    // let output = weight_tensor.add(&input).unwrap();
+    let weight_tensor = Tensor::from_vec(weight_values, &[size], &device).unwrap();
+    println!("weight_tensor: {}", weight_tensor);
+    println!("weight_tensor: {:p}", &weight_tensor);
+
+    let input_tensor = Tensor::from_vec(input_values, &[size], &device).unwrap();
+    println!("input_tensor: {}", input_tensor);
+    println!("input_tensor: {:p}", &input_tensor);
+
+    let output_tensor = weight_tensor.add(&input_tensor).unwrap();
+    println!("output_tensor: {}", output_tensor);
+    assert_eq!(output_tensor.to_vec1::<f32>().unwrap(), expected_output);
 }
