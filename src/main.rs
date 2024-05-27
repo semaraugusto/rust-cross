@@ -1,21 +1,28 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-// use std::str::FromStr;
+use std::str::FromStr;
 
 use anyhow::{Error as E, Result};
 use candle_transformers::models::stable_lm::{Config, Model as StableLM};
+// use serde::Deserialize;
+use serde::{Deserialize, Deserializer, Serialize};
 
 use candle::{DType, Device, Tensor};
-// use candle_nn::VarBuilder;
+use candle_nn::VarBuilder;
 use candle_transformers::generation::LogitsProcessor;
-use tokenizers::Tokenizer;
+use tokenizers::{
+    DecoderWrapper, ModelWrapper, NormalizerWrapper, PostProcessorWrapper, PreTokenizerWrapper,
+    Tokenizer,
+};
 
+use std::collections::HashMap;
 mod token_output_stream;
 use token_output_stream::TokenOutputStream;
 
 mod utils;
 
+#[derive(Debug)]
 enum Model {
     StableLM(StableLM),
 }
@@ -30,102 +37,104 @@ struct TextGeneration {
 }
 
 // #[cfg(not(target_os = "zkvm"))]
-// // pub fn load_model(config: Config, device: &Device) -> StableLM {
-// pub fn load_model(device: &Device) -> Result<LinearModel> {
+// pub fn load_model(config: Config, device: &Device) -> Result<StableLM> {
+//     // pub fn load_model(device: &Device) -> Result<LinearModel> {
 //     let filenames = ["linear.safetensors"];
 //     let dtype = DType::F32;
 //     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, device).unwrap() };
-//     Ok(Model::new(vb).unwrap())
+//     // Ok(Model::new(vb).unwrap())
+//     Ok(Model::StableLM(vb))
 // }
 
-// #[cfg(target_os = "zkvm")]
+#[cfg(target_os = "zkvm")]
 // #[cfg(not(target_os="zkvm"))]
 // pub fn load_model() -> Vec<u8> {
 // pub fn load_model(device: &Device) -> Result<LinearModel> {
-//     // pub fn load_model_2(config: Config, device: &Device) -> Result<StableLM> {
-//     let dtype = DType::F32;
-//     let mut tensors: HashMap<String, Tensor> = HashMap::new();
-//
-//     // let starting_model_addr = 270557184usize;
-//     let starting_model_addr = 0x5_0000_0000usize;
-//     let mut addr = starting_model_addr;
-//     let magic = utils::read_numeric::<u32>(addr);
-//     addr += std::mem::size_of::<u32>();
-//     println!("[HERE] VALUE:: `{:?}`", magic);
-//     assert_eq!(magic, 0x67676D6C);
-//     // let model_len = read_numeric::<u64>(addr);
-//     // println!("[HERE] VALUE+4:: `{:?}`", model_len);
-//     // let model_addr = model_addr + 4;
-//     // let model_ptr = model_addr as *mut u8;
-//     let num_tensors = utils::read_numeric::<u32>(addr);
-//     addr += std::mem::size_of::<u32>();
-//     println!("[HERE] num_tensors:: `{:?}`", num_tensors);
-//     for _ in 0..num_tensors {
-//         let string_len = utils::read_numeric::<u32>(addr);
-//         addr += std::mem::size_of::<u32>();
-//         println!("[HERE] string_len: `{:?}`", string_len);
-//         let raw_bytes =
-//             unsafe { std::slice::from_raw_parts(addr as *const u8, string_len as usize) };
-//         addr += string_len as usize;
-//         let tensor_name = String::from_utf8_lossy(raw_bytes).to_string();
-//         println!("tensor_name: `{:?}`", tensor_name);
-//         println!("name_len: `{:?}`", tensor_name.len());
-//         let tensor_dims = utils::read_numeric::<u32>(addr);
-//         addr += std::mem::size_of::<u32>();
-//         // let mut tensor_shape = vec![];
-//         let mut tensor_shape = vec![];
-//         let mut tensor_num_elems = 1;
-//         for _ in 0..tensor_dims {
-//             let shape_i = utils::read_numeric::<u32>(addr);
-//             tensor_num_elems *= shape_i;
-//             addr += std::mem::size_of::<u32>();
-//             tensor_shape.push(shape_i as usize)
-//         }
-//         let tensor_byte_len = tensor_num_elems * std::mem::size_of::<f32>() as u32;
-//         println!("tensor_shape!: `{:?}`", tensor_shape);
-//         println!("tensor_byte_len!: `{:?}`", tensor_byte_len);
-//         let tensor_ptr = addr as *mut u8;
-//         let tensor_bytes =
-//             // unsafe { std::slice::from_raw_parts(addr as *const u8, tensor_byte_len as usize) };
-//             unsafe { Vec::from_raw_parts(tensor_ptr, tensor_byte_len as usize, tensor_byte_len as usize) };
-//         addr += tensor_byte_len as usize;
-//         println!("tensor starting bytes: `{:?}`", &tensor_bytes[..40]);
-//         println!(
-//             "tensor end bytes: `{:?}`",
-//             &tensor_bytes[tensor_bytes.len() - 40..]
-//         );
-//         let float_vec = tensor_bytes
-//             .chunks_exact(std::mem::size_of::<f32>())
-//             .map(|chunk| {
-//                 let mut bytes = [0u8; 4];
-//                 bytes.copy_from_slice(chunk);
-//                 f32::from_le_bytes(bytes)
-//             })
-//             .collect::<Vec<f32>>();
-//         // tensor_shape.reverse();
-//         // let tensor =
-//         //     Tensor::from_raw_buffer(&tensor_bytes, DType::F32, &tensor_shape, device).unwrap();
-//         if tensor_name == "weight" {
-//             // println!("tensor sum: `{:?}`", tensor.to_vec2::<f32>()?);
-//             // println!("tensor bytes: `{:?}`", &tensor_bytes[..784]);
-//             // println!("tensor[0]: `{:?}`", tensor.to_vec2::<f32>()?[0]);
-//             println!("tensor[0]: `{:?}`", &float_vec[..784]);
-//         }
-//         let tensor = Tensor::from_vec(float_vec.clone(), tensor_shape, device).unwrap();
-//         println!("tensor: `{}`", tensor);
-//         println!("tensor debug: `{:?}`", tensor);
-//         tensors.insert(tensor_name, tensor.clone());
-//     }
-//     let magic = utils::read_numeric::<u32>(addr);
-//     addr += std::mem::size_of::<u32>();
-//     println!("[HERE] MODEL:: `{:?}`", magic);
-//     assert_eq!(magic, 0x67676D6D);
-//
-//     println!("tensor keys: `{:?}`", tensors.keys());
-//
-//     let vb = VarBuilder::from_tensors(tensors, dtype, device);
-//     Ok(LinearModel::new(vb).unwrap())
-// }
+pub fn load_model(config: Config, device: &Device) -> Result<Model> {
+    let dtype = DType::F32;
+    let mut tensors: HashMap<String, Tensor> = HashMap::new();
+
+    // let starting_model_addr = 270557184usize;
+    let starting_model_addr = 0x5_0000_0000usize;
+    let mut addr = starting_model_addr;
+    let magic = utils::read_numeric::<u32>(addr);
+    addr += std::mem::size_of::<u32>();
+    println!("[HERE] VALUE:: `{:?}`", magic);
+    assert_eq!(magic, 0x67676D6C);
+    // let model_len = read_numeric::<u64>(addr);
+    // println!("[HERE] VALUE+4:: `{:?}`", model_len);
+    // let model_addr = model_addr + 4;
+    // let model_ptr = model_addr as *mut u8;
+    let num_tensors = utils::read_numeric::<u32>(addr);
+    addr += std::mem::size_of::<u32>();
+    println!("[HERE] num_tensors:: `{:?}`", num_tensors);
+    for _ in 0..num_tensors {
+        let string_len = utils::read_numeric::<u32>(addr);
+        addr += std::mem::size_of::<u32>();
+        println!("[HERE] string_len: `{:?}`", string_len);
+        let raw_bytes =
+            unsafe { std::slice::from_raw_parts(addr as *const u8, string_len as usize) };
+        addr += string_len as usize;
+        let tensor_name = String::from_utf8_lossy(raw_bytes).to_string();
+        println!("tensor_name: `{:?}`", tensor_name);
+        println!("name_len: `{:?}`", tensor_name.len());
+        let tensor_dims = utils::read_numeric::<u32>(addr);
+        addr += std::mem::size_of::<u32>();
+        // let mut tensor_shape = vec![];
+        let mut tensor_shape = vec![];
+        let mut tensor_num_elems = 1;
+        for _ in 0..tensor_dims {
+            let shape_i = utils::read_numeric::<u32>(addr);
+            tensor_num_elems *= shape_i;
+            addr += std::mem::size_of::<u32>();
+            tensor_shape.push(shape_i as usize)
+        }
+        let tensor_byte_len = tensor_num_elems * std::mem::size_of::<f32>() as u32;
+        println!("tensor_shape!: `{:?}`", tensor_shape);
+        println!("tensor_byte_len!: `{:?}`", tensor_byte_len);
+        let tensor_ptr = addr as *mut u8;
+        let tensor_bytes =
+            // unsafe { std::slice::from_raw_parts(addr as *const u8, tensor_byte_len as usize) };
+            unsafe { Vec::from_raw_parts(tensor_ptr, tensor_byte_len as usize, tensor_byte_len as usize) };
+        addr += tensor_byte_len as usize;
+        println!("tensor starting bytes: `{:?}`", &tensor_bytes[..40]);
+        println!(
+            "tensor end bytes: `{:?}`",
+            &tensor_bytes[tensor_bytes.len() - 40..]
+        );
+        // let float_vec = tensor_bytes
+        //     .chunks_exact(std::mem::size_of::<f32>())
+        //     .map(|chunk| {
+        //         let mut bytes = [0u8; 4];
+        //         bytes.copy_from_slice(chunk);
+        //         f32::from_le_bytes(bytes)
+        //     })
+        //     .collect::<Vec<f32>>();
+        // tensor_shape.reverse();
+        let tensor =
+            Tensor::from_raw_buffer(&tensor_bytes, DType::F32, &tensor_shape, device).unwrap();
+        // let tensor = Tensor::from_vec(float_vec.clone(), tensor_shape, device).unwrap();
+        // if tensor_name == "weight" {
+        //     // println!("tensor sum: `{:?}`", tensor.to_vec2::<f32>()?);
+        //     // println!("tensor bytes: `{:?}`", &tensor_bytes[..784]);
+        //     // println!("tensor[0]: `{:?}`", tensor.to_vec2::<f32>()?[0]);
+        //     println!("tensor[0]: `{:?}`", &float_vec[..784]);
+        // }
+        println!("tensor: `{}`", tensor);
+        println!("tensor debug: `{:?}`", tensor);
+        tensors.insert(tensor_name, tensor.clone());
+    }
+    let magic = utils::read_numeric::<u32>(addr);
+    addr += std::mem::size_of::<u32>();
+    println!("[HERE] MODEL:: `{:?}`", magic);
+    assert_eq!(magic, 0x67676D6D);
+
+    println!("tensor keys: `{:?}`", tensors.keys());
+
+    let vb = VarBuilder::from_tensors(tensors, dtype, device);
+    // Ok(LinearModel::new(vb).unwrap())
+    Ok(Model::StableLM(StableLM::new(&config, vb).unwrap()))
+}
 
 #[cfg(not(target_os = "zkvm"))]
 pub fn load_input(device: &Device) -> Tensor {
@@ -332,10 +341,15 @@ pub fn get_tokenizer_bytes() -> &'static [u8] {
     println!("[HERE] VALUE+4:: `{:?}`", tokenizer_len);
 
     let tokenizer_bytes = unsafe {
+        // std::slice::from_raw_parts((tokenizer_addr) as *const u8, (tokenizer_len - 1) as usize)
         std::slice::from_raw_parts((tokenizer_addr) as *const u8, tokenizer_len as usize)
     };
     println!("tokenizer? `{:?}`", &tokenizer_bytes[0..12]);
     tokenizer_bytes
+}
+#[cfg(not(target_os = "zkvm"))]
+pub fn get_tokenizer_bytes() -> &'static [u8] {
+    include_bytes!("../model_wrapper.json")
 }
 
 // fn main() -> Result<()> {
@@ -364,24 +378,54 @@ fn main() {
             .collect::<Vec<_>>(),
         None => panic!("No model weights file provided"),
     };
+    let oldjson = r#"{"type":"Sequence","decoders":[{"type":"ByteFallback"},{"type":"Metaspace","replacement":"▁","add_prefix_space":true,"prepend_scheme":"always"}]}"#;
+    let olddecoder: DecoderWrapper = serde_json::from_str(oldjson).unwrap();
+    let oldserialized = serde_json::to_string(&olddecoder).unwrap();
+    let json = r#"{"type":"Sequence","decoders":[{"type":"ByteFallback"},{"type":"Metaspace","replacement":"▁","prepend_scheme":"always","split":true}]}"#;
+    assert_eq!(oldserialized, json);
 
-    println!("model file path: {:?}", filenames);
-    let tokenizer_bytes = get_tokenizer_bytes();
-    println!("tokenizer_byte file path: {:?}", tokenizer_bytes.len());
-    let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
-    println!("[SUCCESS] Tokenizer has been init!!!!!`{:?}`", tokenizer);
+    let decoder: DecoderWrapper = serde_json::from_str(json).unwrap();
+    let serialized = serde_json::to_string(&decoder).unwrap();
+    assert_eq!(serialized, json);
 
-    // println!("tokenizer str len: {:?}", tokenizer_bytes.len());
-    // // println!("tokenizer str lines[91670..91690]: {:?}", lines);
-    // // println!("tokenizer json: {:?}", tokenizer_json);
-    // println!("tokenizer str: {:?}", &tokenizer_bytes[1956970..1956980]);
-    // // if tokenizer_str.len() > 1956980 {
-    // //     println!("tokenizer str: {:?}", &tokenizer_bytes[1956970..1956980]);
-    // // }
-    //
-    // // let tokenizer = Tokenizer::from_str(tokenizer_str).unwrap();
-    //
-    //
+    let bytes = get_tokenizer_bytes();
+    // let decoder: DecoderWrapper = serde_json::from_slice(decoder_bytes).unwrap();
+    // let wrapper: NormalizerWrapper = serde_json::from_slice(bytes).unwrap();
+    // let wrapper: PostProcessorWrapper = serde_json::from_slice(bytes).unwrap();
+    println!("bytes byte len: {:?}", bytes.len());
+    println!("bytes addr: {:p}", bytes);
+    println!("bytes addr: {:p}", bytes);
+    // let wrapper: PreTokenizerWrapper = serde_json::from_slice(bytes).unwrap();
+    // let reader = serde_json::read::SliceRead::new(bytes);
+    // let parsed = reader.&mut
+    // println!("reader created?");
+    // println!("Before serde_json");
+    // let wrapper: ModelWrapper = serde_json::from_slice(bytes).unwrap();
+    // std::println!("inside from_trait");
+    // let mut deserializer = serde_json::Deserializer::new(reader);
+    // std::println!("de generated here");
+    // // let value = ModelWrapper (&mut deserializer);
+    // // let d: ModelWrapper = deserializer.into();
+    // let asd = deserializer.from_slice(bytes);
+    // std::println!("d generated here");
+    // serde_json::de::
+    // deserializer.deserialize_str()
+
+    // let value = serde_json::Deserialize::deserialize(&mut de);
+    // std::println!("value generated {:?}", value);
+    let wrapper: ModelWrapper = serde_json::from_slice(bytes).unwrap();
+    // let wrapper: Tokenizer = serde_json::from_slice(bytes).unwrap();
+    // println!("wrapper: {:?}", wrapper);
+    // println!("model file path: {:?}", filenames);
+    // let tokenizer_bytes = get_tokenizer_bytes();
+    // println!("tokenizer_byte byte len: {:?}", tokenizer_bytes.len());
+    // let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
+    // let tokenizer_str = include_str!("/home/semar/.cache/huggingface/hub/models--stabilityai--stablelm-3b-4e1t/snapshots/fa4a6a92fca83c3b4223a3c9bf792887090ebfba/tokenizer.json").trim();
+    // println!("tokenizer_str len: {:?}", tokenizer_str.len());
+    // let tokenizer = Tokenizer::from_str(tokenizer_str).unwrap();
+
+    // println!("[SUCCESS] Tokenizer has been init!!!!!`{:?}`", tokenizer);
+
     // let config = match args.which {
     //     Which::V1Orig => Config::stablelm_3b_4e1t(args.use_flash_attn),
     //     Which::V1 | Which::V1Zephyr | Which::V2 | Which::V2Zephyr | Which::Code => {
@@ -389,14 +433,16 @@ fn main() {
     //     }
     // };
     // println!("config file path: {:?}", config);
-    //
     // let tokenizer = Tokenizer::from_bytes(tokenizer_bytes).unwrap();
     // println!("tokenizer has been init");
     //
     // let device = Device::Cpu;
     // let dtype = DType::F32;
-    // let vb = unsafe { VarBuilder::from_mmaped_safetensors(&filenames, dtype, &device).unwrap() };
-    // let model = Model::StableLM(StableLM::new(&config, vb).unwrap());
+    // let vb = unsafe { varbuilder::from_mmaped_safetensors(&filenames, dtype, &device).unwrap() };
+    // let model = model::stablelm(stablelm::new(&config, vb).unwrap());
+    // let model = load_model(config, &device).unwrap();
+    //
+    // println!("model has been loaded: {:?}", model);
     //
     // let mut pipeline = TextGeneration::new(
     //     model,

@@ -1,56 +1,31 @@
 [build]
 # target = "riscv32im-succinct-zkvm-elf"
 
-[target.riscv64gc-unknown-linux-gnu]
-# rustflags = [
-# 	"-Cpasses=loweratomic",
-# 	"-Clink-arg=-e_start",
-# 	"-Ctarget-feature=-c",
-# 	"-C",
-# 	"link-arg=-s",
-# ]
+[target.x86_64-unknown-linux-gnu]
 rustflags = [
 	"-Cpasses=loweratomic",
-	"-Clinker-plugin-lto=yes",
-	# "-Ctarget-feature=+crt-static",
-	"-Ctarget-feature=+m",
-	"-Clink-arg=-s",
-]
-# runner = "/usr/sysroot/lib/ld-linux-riscv64-lp64d.so.1 --library-path /usr/sysroot/lib/"
-linker = "riscv64-unknown-linux-gnu-gcc"
-
-[target.riscv64gc-unknown-linux-musl]
-linker = "/home/semar/x-tools/riscv64-unknown-linux-musl/riscv64-unknown-linux-musl/bin/ld"
-
-[target.riscv64gc-unknown-none-elf]
-# linker = "/opt/riscv/bin/riscv64-unknown-elf-ld"
-linker = "riscv64-unknown-elf-ld"
-rustflags = [
-	"-Cpasses=loweratomic",
-	"-Clink-arg=-e_start",
-	"-Ctarget-feature=-c",
+	# "-Clinker-plugin-lto=yes",
 	"-Ctarget-feature=+crt-static",
-	"-Clink-arg=-s",
-	# 	"-C",
-	# 	"link-arg=-lgcc",
+	"-Ctarget-feature=+m",
+	# "-Clink-arg=-s",
 ]
 
 [target.riscv32im-succinct-zkvm-elf]
 rustflags = [
 	"-Cpasses=loweratomic",
-	"-Clinker-plugin-lto=yes",
+	# "-Clinker-plugin-lto=yes",
 	"-Ctarget-feature=+crt-static",
 	"-Ctarget-feature=+m",
-	"-Clink-arg=-s",
+	# "-Clink-arg=-s",
 ]
 # linker = "riscv32-unknown-elf-gcc"
 [target.riscv64im-unicorn-zkvm-elf]
 rustflags = [
 	"-Cpasses=loweratomic",
-	"-Clinker-plugin-lto=yes",
+	# "-Clinker-plugin-lto=yes",
 	"-Ctarget-feature=+crt-static",
 	"-Ctarget-feature=+m",
-	"-Clink-arg=-s",
+	# "-Clink-arg=-s",
 ]
 # linker = "riscv32-unknown-elf-gcc"
 
